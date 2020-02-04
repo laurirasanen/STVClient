@@ -1,0 +1,12 @@
+{
+  "name": "STVClient",
+  "version": "0.1.0",
+  "license": "MIT",
+  "dependencies": {
+    "lzjs": "^1.3.0",
+    "net": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^13.7.0"
+  }
+}
