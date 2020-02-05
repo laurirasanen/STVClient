@@ -15,6 +15,7 @@ import {
     HEADER_BYTES,
     A2S_GETCHALLENGE,
     PROTOCOL_STEAM
+    GAME_VERSION_TF
 } from "./Protocol";
 
 export class NetChan {
@@ -125,6 +126,7 @@ export class NetChan {
         writer.writeUint64(challengeNr);
         writer.writeString(name);
         writer.writeString(password);
+        writer.writeString(GAME_VERSION_TF.toString());
 
         switch (authProtocol) {
             case PROTOCOL_HASHEDCDKEY:

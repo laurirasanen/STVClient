@@ -1,5 +1,6 @@
 export const CD_KEY = "HLTVHLTVHLTVHLTVHLTVHLTVHLTVHLTV";
 export const PROTOCOL_VERSION = 24;
+export const GAME_VERSION_TF = 5615298;
 
 // M = master, S = server, C = client, A = any
 
