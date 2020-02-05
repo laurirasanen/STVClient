@@ -28,6 +28,16 @@ export class BinaryReader {
         return this.offset;
     }
 
+    getRemaining(): number {
+        return this.buffer.byteLength - this.offset;
+    }
+
+    copy = (target: Buffer, offset: number = 0) => {
+        for (let i = 0; i < this.buffer.byteLength - offset; i++) {
+            target.writeUInt8(this.buffer.readUInt8(i + offset), i);
+        }
+    }
+
     readBytes(amount: number): Array<number> {
         var bytes = new Array<number>(amount);
         for (let i = 0; i < amount; i++) {

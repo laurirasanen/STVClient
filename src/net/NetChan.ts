@@ -14,7 +14,7 @@ import {
     net_SetConVar,
     HEADER_BYTES,
     A2S_GETCHALLENGE,
-    PROTOCOL_STEAM
+    PROTOCOL_STEAM,
     GAME_VERSION_TF
 } from "./Protocol";
 
@@ -155,5 +155,16 @@ export class NetChan {
         var buf = Buffer.alloc(writer.getSize());
         writer.copy(buf);
         return buf;
+    }
+
+    sendAck(sequenceNr: number, sequenceNrAck: number) {
+        var writer = new BinaryWriter();
+        writer.writeUint32(sequenceNr + 1);
+        writer.writeUint32(sequenceNrAck);
+        // ?
+
+        var buf = Buffer.alloc(writer.getSize());
+        writer.copy(buf);
+        this.send(buf);
     }
 }
