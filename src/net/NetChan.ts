@@ -196,12 +196,12 @@ export class NetChan {
             packet.header = reader.readUint32();
             switch (packet.header) {
                 case CONNECTIONLESS_HEADER:
-                    errorWithTime("STVClient.net.MessageHandler.handleMessage(): Received CONNECTIONLESS_HEADER");
+                    errorWithTime("STVClient.net.NetChan.handleMessage(): Received CONNECTIONLESS_HEADER");
                     this.handleConnectionlessPacket(packet, reader);
                     break;
 
                 default:
-                    errorWithTime(`STVClient.net.MessageHandler.handleMessage(): Received unhandled header ${packet.header}`);
+                    errorWithTime(`STVClient.net.NetChan.handleMessage(): Received unhandled header ${packet.header}`);
                     return;
             }
 
@@ -213,18 +213,18 @@ export class NetChan {
     }
 
     handleConnectionlessPacket = (packet: NetPacket, reader: BinaryReader) => {
-        logWithTime(`STVClient.net.MessageHandler.handleConnectionlessPacket()`);
+        logWithTime(`STVClient.net.NetChan.handleConnectionlessPacket()`);
         packet.messageType = reader.readUint8();
         packet.sequenceNr = reader.readUint32();
 
         switch (packet.messageType) {
             case S2C_CHALLENGE:
-                logWithTime("STVClient.net.MessageHandler.handleConnectionlessPacket(): Received S2C_CHALLENGE");
+                logWithTime("STVClient.net.NetChan.handleConnectionlessPacket(): Received S2C_CHALLENGE");
                 this.handleChallenge(reader);
                 break;
 
             case S2C_CONNECTION:
-                logWithTime("STVClient.net.MessageHandler.handleConnectionlessPacket(): Received S2C_CONNECTION");
+                logWithTime("STVClient.net.NetChan.handleConnectionlessPacket(): Received S2C_CONNECTION");
                 this.handleConnection(reader);
                 break;
 
@@ -234,19 +234,19 @@ export class NetChan {
                 // in NetChan.onMessage but let's be sure.
                 if (this.state == SIGNONSTATE_CHALLENGE) {
                     var reason = reader.readString();
-                    errorWithTime(`STVClient.net.MessageHandler.handleConnectionlessPacket(): Received S2C_CONNREJECT: ${reason}`);
+                    errorWithTime(`STVClient.net.NetChan.handleConnectionlessPacket(): Received S2C_CONNREJECT: ${reason}`);
                     this.state = SIGNONSTATE_NONE;
                 }
                 return;
 
             default:
-                errorWithTime(`STVClient.net.MessageHandler.handleConnectionlessPacket(): Received unhandled message type ${packet.messageType} ('${String.fromCharCode(packet.messageType)}')`);
+                errorWithTime(`STVClient.net.NetChan.handleConnectionlessPacket(): Received unhandled message type ${packet.messageType} ('${String.fromCharCode(packet.messageType)}')`);
                 return;
         }
     }
 
     handleChallenge = (reader: BinaryReader) => {
-        logWithTime(`STVClient.net.MessageHandler.handleChallenge()`);
+        logWithTime(`STVClient.net.NetChan.handleChallenge()`);
 
         if (this.state !== SIGNONSTATE_CHALLENGE) return;
 
@@ -259,7 +259,7 @@ export class NetChan {
 
         switch (authProtocol) {
             case PROTOCOL_STEAM:
-                logWithTime("STVClient.net.MessageHandler.handleChallenge(): Received PROTOCOL_STEAM");
+                logWithTime("STVClient.net.NetChan.handleChallenge(): Received PROTOCOL_STEAM");
                 encryptionSize = reader.readUint16();
                 encryptionKey = reader.readBytes(encryptionSize);
                 steamId = reader.readUint64();
@@ -267,11 +267,11 @@ export class NetChan {
                 break;
 
             case PROTOCOL_HASHEDCDKEY:
-                logWithTime("STVClient.net.MessageHandler.handleChallenge(): Received PROTOCOL_HASHEDCDKEY");
+                logWithTime("STVClient.net.NetChan.handleChallenge(): Received PROTOCOL_HASHEDCDKEY");
                 break;
 
             default:
-                errorWithTime(`STVClient.net.MessageHandler.handleChallenge(): Received unhandled auth protocol ${authProtocol}`);
+                errorWithTime(`STVClient.net.NetChan.handleChallenge(): Received unhandled auth protocol ${authProtocol}`);
                 return;
         }
 
@@ -290,7 +290,7 @@ export class NetChan {
     }
 
     handleConnection = (reader: BinaryReader) => {
-        logWithTime(`STVClient.net.MessageHandler.handleConnection()`);
+        logWithTime(`STVClient.net.NetChan.handleConnection()`);
 
         if (this.state !== SIGNONSTATE_CHALLENGE) return;
         this.state = SIGNONSTATE_CONNECTED;
@@ -308,7 +308,7 @@ export class NetChan {
     }
 
     handleConnectedPacket = (packet: NetPacket, reader: BinaryReader) => {
-        logWithTime(`STVClient.net.MessageHandler.handleConnectedPacket()`);
+        logWithTime(`STVClient.net.NetChan.handleConnectedPacket()`);
 
         var flags = 0;
         if (true /* hasHeader */) {
@@ -362,23 +362,8 @@ export class NetChan {
 
         console.log(`remaining: ${reader.getRemaining()} bits`);
 
-        while (true) {
-            if (reader.getRemaining() < NETMSG_TYPE_BITS) {
-                // finished reading
-                break;
-            }
-
-            var msgType = reader.readBitsUint(5);
-
-            console.log(`Read message type ${msgType}`);
-
-            if (msgType === net_NOP) {
-                continue;
-            }
-
-            // handleMessage
-            break;
-        }
+        this.messageHandler.processMessages(reader);
+        
         console.log(`remaining after: ${reader.getRemaining()} bits`);
     }
 

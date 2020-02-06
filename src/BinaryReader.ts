@@ -54,6 +54,16 @@ export class BinaryReader {
         return value;
     }
 
+    readWord(): number {
+        return this.readBitsUint(16);
+    }
+
+    readFloat(): number {
+        var uint = this.readBitsUint(32);
+        var uintArr = new Uint32Array([uint]);
+        return new Float32Array(uintArr.buffer).values[0];
+    }
+
     readBits(amount: number): Array<boolean> {
         var arr = new Array<boolean>(amount);
         for (let i = 0; i < amount; i++) {
