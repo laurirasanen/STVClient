@@ -18,7 +18,7 @@ export class BinaryReader {
             case SeekOrigin.Begin:
                 return this.offset = offset;
             case SeekOrigin.End:
-                return this.offset = this.buffer.byteLength - offset;
+                return this.offset = this.buffer.byteLength * 8 - offset;
             default:
                 return this.offset = this.offset + offset;
         }
@@ -29,13 +29,49 @@ export class BinaryReader {
     }
 
     getRemaining(): number {
-        return this.buffer.byteLength - this.offset;
+        return this.buffer.byteLength * 8 - this.offset;
     }
 
     copy = (target: Buffer, offset: number = 0) => {
         for (let i = 0; i < this.buffer.byteLength - offset; i++) {
             target.writeUInt8(this.buffer.readUInt8(i + offset), i);
         }
+    }
+
+    readBitsUint(amount: number): number {
+        if (amount > 32) {
+            throw("Tried to read number from more than 32 bits");
+        }
+
+        var bits = this.readBits(amount);
+        var value = 0;
+        for (let i = 0; i < amount; i++) {
+            if (bits[i]) {
+                value += 2**i;
+            }
+        }
+
+        return value;
+    }
+
+    readBits(amount: number): Array<boolean> {
+        var arr = new Array<boolean>(amount);
+        for (let i = 0; i < amount; i++) {
+            // this is gonna be terribly inefficient...
+            // going to read the same byte from stream
+            // 8 times to get 8 bits...
+            arr[i] = this.readOneBit();
+        }
+
+        return arr;
+    }
+
+    readOneBit(): boolean {
+        var bitOffset = this.offset % 8;
+        var byteOffset = (this.offset - bitOffset) / 8;
+        var byte = this.buffer.readUInt8(byteOffset);
+        this.offset++;
+        return ((byte & 2**bitOffset) === 2**bitOffset);
     }
 
     readBytes(amount: number): Array<number> {
@@ -52,33 +88,42 @@ export class BinaryReader {
     }
 
     readUint8(): number {
-        const value = this.buffer.readUInt8(this.offset);
-        this.offset += 1;
+        if (this.offset % 8) {
+            throw("Not aligned to byte");
+        }
+        const value = this.buffer.readUInt8(this.offset / 8);
+        this.offset += 8;
         return value;
     }
 
     readUint16(): number {
-        const value = this.buffer.readUInt16LE(this.offset);
-        this.offset += 2;
+        if (this.offset % 8) {
+            throw("Not aligned to byte");
+        }
+        const value = this.buffer.readUInt16LE(this.offset / 8);
+        this.offset += 16;
         return value;
     }
 
     readInt32(): number {
-        const value = this.buffer.readInt32LE(this.offset);
-        this.offset += 4;
+        if (this.offset % 8) {
+            throw("Not aligned to byte");
+        }
+        const value = this.buffer.readInt32LE(this.offset / 8);
+        this.offset += 32;
         return value;
     }
 
     readUint32(): number {
-        const value = this.buffer.readUInt32LE(this.offset);
-        this.offset += 4;
+        if (this.offset % 8) {
+            throw("Not aligned to byte");
+        }
+        const value = this.buffer.readUInt32LE(this.offset / 8);
+        this.offset += 32;
         return value;
     }
 
     readUint64(): bigint {
-        // const value = this.buffer.readBigUInt64LE(this.offset);
-        // ^ doesn't work
-
         // buffer.readBigUint64LE expects a single 8-byte little endian number.
         // Source encodes 8-byte numbers as a pair of 4-byte LE numbers,
         // where the first one is the larger one.
@@ -93,15 +138,12 @@ export class BinaryReader {
         return (BigInt(val1) << BigInt(32)) + BigInt(val2);
     }
 
-    readInt64(): bigint {
-        const value = this.buffer.readBigInt64LE(this.offset);
-        this.offset += 8;
-        return value;
-    }
-
     readFloat32(): number {
-        const value = this.buffer.readFloatLE(this.offset);
-        this.offset += 4;
+        if (this.offset % 8) {
+            throw("Not aligned to byte");
+        }
+        const value = this.buffer.readFloatLE(this.offset / 8);
+        this.offset += 32;
         return value;
     }
 
@@ -153,7 +195,7 @@ export class BinaryReader {
         let chars = new Array<number>();
         var char = null;
         while (char != 0) {
-            if (this.offset >= this.buffer.byteLength) {
+            if (this.offset >= this.buffer.byteLength * 8) {
                 throw ("Failed to read null-terminator");
             }
 
