@@ -2,10 +2,11 @@ import { NetChan } from "./net/NetChan";
 import { MessageHandler } from "./net/MessageHandler";
 
 export class STVClient {
-    messageHandler: MessageHandler;
+    channel: NetChan;
     readonly name = "STVClient";
 
     constructor(address: string, password = "") {
-        this.messageHandler = new MessageHandler(address, password, this.name);
+        var handler = new MessageHandler();
+        this.channel = new NetChan(address, password, this.name, handler);
     }
 }
