@@ -14,7 +14,7 @@ export class BinaryWriter {
             case SeekOrigin.Begin:
                 return this.offset = offset;
             case SeekOrigin.End:
-                return this.offset = this.buffer.byteLength - offset;
+                return this.offset = this.buffer.byteLength * 8 - offset;
             default:
                 return this.offset = this.offset + offset;
         }
@@ -28,19 +28,91 @@ export class BinaryWriter {
         return this.buffer.byteLength;
     }
 
-    copy = (target: Buffer) => {
-        for (let i = 0; i < this.buffer.byteLength; i++) {
-            target.writeUInt8(this.buffer.readUInt8(i), i);
+    getBuffer = (): Buffer => {
+        var buff = Buffer.alloc(this.buffer.byteLength);
+        this.buffer.copy(buff);
+        return buff;
+    }
+
+    getRemaining(): number {
+        return this.buffer.byteLength * 8 - this.offset;
+    }
+
+    copy = (target: Buffer, offset: number = 0) => {
+        for (let i = 0; i < this.buffer.byteLength - offset; i++) {
+            target.writeUInt8(this.buffer.readUInt8(i + offset), i);
         }
     }
 
     extend = (amount: number) => {
-        if (amount < 1) return;
+        if (amount < this.getSize() * 8 - this.getOffset()) return;
 
-        var buf = Buffer.alloc(this.buffer.byteLength + amount);
+        var bitOffset = amount % 8;
+        var unEven = bitOffset > 0;
+        var byteLength = this.buffer.byteLength + ((amount - bitOffset) / 8);
+        if (unEven) {
+            byteLength++;
+        }
+        var buf = Buffer.alloc(byteLength);
         this.copy(buf);
         this.buffer = buf;
-        this.offset = this.buffer.byteLength - amount;
+    }
+
+    writeBitsUint(value: number, amount: number) {
+        for (let i = 0; i < amount; i++) {
+            this.writeOneBit((value & (2 ** i)) > 0);
+        }
+    }
+
+    writeBits(bits: Array<boolean>) {
+        for (let i = 0; i < bits.length; i++) {
+            this.writeOneBit(bits[i]);            
+        }
+    }
+
+    getBits(): Array<boolean> {
+        var offset = this.getOffset();
+        this.seek(0, SeekOrigin.Begin);
+        var bits = this.readBits(this.getRemaining());
+        this.seek(offset, SeekOrigin.Begin);
+        return bits;
+    }
+
+    readOneBit(): boolean {
+        var bitOffset = this.offset % 8;
+        var byteOffset = (this.offset - bitOffset) / 8;
+        var byte = this.buffer.readUInt8(byteOffset);
+        this.offset++;
+        return ((byte & 2 ** bitOffset) === 2 ** bitOffset);
+    }
+
+    readBits(amount: number): Array<boolean> {
+        var arr = new Array<boolean>(amount);
+        for (let i = 0; i < amount; i++) {
+            // this is gonna be terribly inefficient...
+            // going to read the same byte from stream
+            // 8 times to get 8 bits...
+            arr[i] = this.readOneBit();
+        }
+
+        return arr;
+    }
+
+    writeOneBit(value: boolean) {
+        this.extend(1);
+
+        var bitOffset = this.offset % 8;
+        var byteOffset = (this.offset - bitOffset) / 8;
+        var byte = this.buffer.readUInt8(byteOffset);
+
+        if (value) {
+            byte |= 2 ** bitOffset;
+        } else {
+            byte &= ~(2 ** bitOffset);
+        }
+
+        this.buffer.writeUInt8(byte, byteOffset);
+        this.offset++;
     }
 
     writeBoolean = (value: boolean) => {
@@ -48,25 +120,49 @@ export class BinaryWriter {
     }
 
     writeUint8 = (value: number) => {
-        this.extend(this.offset - this.buffer.byteLength + 1);
+        if (this.offset % 8) {
+            throw ("not aligned to byte");
+        }
 
-        this.buffer.writeUInt8(value, this.offset);
-        this.offset += 1;
+        this.extend(8);
+
+        this.buffer.writeUInt8(value, this.offset / 8);
+        this.offset += 8;
     }
 
     writeInt32 = (value: number) => {
-        this.extend(this.offset - this.buffer.byteLength + 4);
+        if (this.offset % 8) {
+            throw ("not aligned to byte");
+        }
 
-        this.buffer.writeInt32LE(value, this.offset);
-        this.offset += 4;
+        this.extend(32);
+
+        this.buffer.writeInt32LE(value, this.offset / 8);
+        this.offset += 32;
+        return value;
+    }
+
+    writeUint16 = (value: number) => {
+        if (this.offset % 8) {
+            throw ("not aligned to byte");
+        }
+
+        this.extend(16);
+
+        this.buffer.writeUInt16LE(value, this.offset / 8);
+        this.offset += 16;
         return value;
     }
 
     writeUint32 = (value: number) => {
-        this.extend(this.offset - this.buffer.byteLength + 4);
+        if (this.offset % 8) {
+            throw ("not aligned to byte");
+        }
 
-        this.buffer.writeUInt32LE(value, this.offset);
-        this.offset += 4;
+        this.extend(32);
+
+        this.buffer.writeUInt32LE(value, this.offset / 8);
+        this.offset += 32;
         return value;
     }
 
@@ -82,10 +178,14 @@ export class BinaryWriter {
     }
 
     writeFloat32 = (value: number) => {
-        this.extend(this.offset - this.buffer.byteLength + 4);
+        if (this.offset % 8) {
+            throw ("not aligned to byte");
+        }
 
-        this.buffer.writeFloatLE(value, this.offset);
-        this.offset += 4;
+        this.extend(32);
+
+        this.buffer.writeFloatLE(value, this.offset / 8);
+        this.offset += 32;
         return value;
     }
 
@@ -135,7 +235,7 @@ export class BinaryWriter {
     // Write a null-terminated string
     writeString = (value: string) => {
         // extend once instead of every time we write uint
-        this.extend(this.offset - this.buffer.byteLength + value.length + 1);
+        this.extend(value.length * 8 + 8);
 
         for (let i = 0; i < value.length; i++) {
             var char = value.charCodeAt(i);

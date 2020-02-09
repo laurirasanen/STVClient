@@ -4,6 +4,18 @@ export const GAME_VERSION_TF = 5615298;
 export const MAX_SUBCHANNELS = 8;
 export const MAX_STREAMS = 2;
 
+export const FRAGMENT_BITS = 8;
+export const FRAGMENT_SIZE = 1 << FRAGMENT_BITS;
+export const BYTES2FRAGMENTS = (x) => { return (x + FRAGMENT_SIZE - 1) / FRAGMENT_SIZE; };
+export const MAX_FILE_SIZE_BITS = 26;
+
+export const SUBCHANNEL_FREE = 0;
+export const SUBCHANNEL_TOSEND = 1;
+export const SUBCHANNEL_WAITING = 2;
+export const SUBCHANNEL_DIRTY = 3;
+
+export const FLIPBIT = (v, b) => { if (v & b) v &= ~b; else v |= b };
+
 // M = master, S = server, C = client, A = any
 
 // Client / ANY to SERVER
@@ -140,10 +152,10 @@ export const svc_SetPause = 11;		// tells client if server paused or unpaused
 export const svc_CreateStringTable = 12;	// inits shared string tables
 export const svc_UpdateStringTable = 13;	// updates a string table
 
-export const svc_VoiceInit = 14;	// inits used voice codecs & = quality
-export const svc_VoiceData = 15;	// Voicestream data from the = server
+export const svc_VoiceInit = 14;	// inits used voice codecs & quality
+export const svc_VoiceData = 15;	// Voicestream data from the server
 
-// export const svc_HLTV		=	16;	// HLTV control messages
+// export const svc_HLTV = 16;	// HLTV control messages
 
 export const svc_Sounds = 17;		// starts playing sound
 
@@ -213,3 +225,43 @@ export const mm_Mutelist = 21;	// send mutelist info to other clients
 export const mm_Checkpoint = 22;	// game state checkpoints (start, connect, etc)
 
 export const MM_LASTMSG = 22;	// last known matchmaking message
+
+export const BITS_PER_INT = 32;
+export const GetBitForBitNum = (bitNum) => {
+    const bitsForBitNum = [
+        (1 << 0),
+        (1 << 1),
+        (1 << 2),
+        (1 << 3),
+        (1 << 4),
+        (1 << 5),
+        (1 << 6),
+        (1 << 7),
+        (1 << 8),
+        (1 << 9),
+        (1 << 10),
+        (1 << 11),
+        (1 << 12),
+        (1 << 13),
+        (1 << 14),
+        (1 << 15),
+        (1 << 16),
+        (1 << 17),
+        (1 << 18),
+        (1 << 19),
+        (1 << 20),
+        (1 << 21),
+        (1 << 22),
+        (1 << 23),
+        (1 << 24),
+        (1 << 25),
+        (1 << 26),
+        (1 << 27),
+        (1 << 28),
+        (1 << 29),
+        (1 << 30),
+        (1 << 31),
+    ];
+
+    return bitsForBitNum[(bitNum) & (BITS_PER_INT - 1)];
+};

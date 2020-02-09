@@ -34,3 +34,7 @@ export function warnWithTime(text: string) {
 export function errorWithTime(text: string) {
     console.error(`[${timeStamp()}] ${text}`);
 }
+
+export function padNumber(value: number, multiple: number) {
+    return value + (multiple - (value % multiple)) % multiple;
+}
