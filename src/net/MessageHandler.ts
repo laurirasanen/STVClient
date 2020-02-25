@@ -2,16 +2,10 @@ import { BinaryReader, SeekOrigin } from "../BinaryReader";
 import { NetMessage, SVC_ServerInfo, SVC_SetPause, NET_Tick, NET_SetConvar, SVC_GameEventList, SVC_VoiceData, SVC_Print } from "./NetMessage";
 import { net_NOP, net_Disconnect, net_File, svc_ServerInfo, NETMSG_TYPE_BITS, svc_SetPause, net_Tick, net_SetConVar, svc_GameEventList, svc_VoiceData, svc_Print } from "./Protocol";
 import { errorWithTime, logWithTime } from "../Util";
-import { NetChan } from "./NetChan";
-import * as lzjs from "lzjs";
 
 export class MessageHandler {
-    channel: NetChan;
     paused: boolean;
 
-    constructor(channel: NetChan) {
-        this.channel = channel;
-    }
 
     // https://github.com/VSES/SourceEngine2007/blob/master/se2007/engine/net_chan.cpp#L1821
     processMessages(reader: BinaryReader): boolean {
@@ -61,8 +55,8 @@ export class MessageHandler {
     process(msg: NetMessage, type: number): boolean {
         switch (type) {
             case net_Tick:
-                this.channel.hostFrameTime = (msg as NET_Tick).hostFrameTime;
-                this.channel.hostFrameTimeStdDeviation = (msg as NET_Tick).hostFrameTimeStdDeviation;
+                //this.channel.hostFrameTime = (msg as NET_Tick).hostFrameTime;
+                //this.channel.hostFrameTimeStdDeviation = (msg as NET_Tick).hostFrameTimeStdDeviation;
                 return this.updateAcknowledgedFramecount((msg as NET_Tick).tick);
 
             case svc_Print:

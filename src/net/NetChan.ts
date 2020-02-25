@@ -105,7 +105,7 @@ export class NetChan {
             this.subChannels[i] = new SubChannel(i);
         }
 
-        this.messageHandler = new MessageHandler(this);
+        this.messageHandler = new MessageHandler();
 
         this.rate = 0.03;
         this.timeOut = 30;
