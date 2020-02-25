@@ -1,7 +1,7 @@
-import { BinaryReader, SeekOrigin } from "../BinaryReader";
-import { NetMessage, SVC_ServerInfo, SVC_SetPause, NET_Tick, NET_SetConvar, SVC_GameEventList, SVC_VoiceData, SVC_Print } from "./NetMessage";
-import { net_NOP, net_Disconnect, net_File, svc_ServerInfo, NETMSG_TYPE_BITS, svc_SetPause, net_Tick, net_SetConVar, svc_GameEventList, svc_VoiceData, svc_Print } from "./Protocol";
-import { errorWithTime, logWithTime } from "../Util";
+import { BinaryReader, SeekOrigin } from "../../shared/BinaryReader";
+import { NetMessage, SVC_ServerInfo, SVC_SetPause, NET_Tick, NET_SetConvar, SVC_GameEventList, SVC_VoiceData, SVC_Print } from "../../shared/NetMessage";
+import { net_NOP, net_Disconnect, net_File, svc_ServerInfo, NETMSG_TYPE_BITS, svc_SetPause, net_Tick, net_SetConVar, svc_GameEventList, svc_VoiceData, svc_Print } from "../../shared/Protocol";
+import { errorWithTime, logWithTime } from "../../shared/Util";
 
 export class MessageHandler {
     paused: boolean;

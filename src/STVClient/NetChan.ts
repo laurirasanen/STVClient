@@ -1,11 +1,11 @@
 import { Socket, createSocket } from "dgram";
 import * as lsjz from "lzjs";
 import * as CRC32 from "crc-32";
-import { MessageHandler } from "./MessageHandler";
-import { logWithTime, errorWithTime, padNumber } from "../Util";
-import { BinaryWriter } from "../BinaryWriter";
-import { BinaryReader, SeekOrigin } from "../BinaryReader";
-import { NetPacket, DataFragment, SubChannel } from "./Structures";
+import { MessageHandler } from "./NetChan/MessageHandler";
+import { logWithTime, errorWithTime, padNumber } from "../shared/Util";
+import { BinaryWriter } from "../shared/BinaryWriter";
+import { BinaryReader, SeekOrigin } from "../shared/BinaryReader";
+import { NetPacket, DataFragment, SubChannel } from "../shared/Structures";
 // TODO: clean up these imports
 import {
     CONNECTIONLESS_HEADER,
@@ -51,8 +51,8 @@ import {
     FLIPBIT,
     ENCODE_PAD_BITS,
     GetBitForBitNum
-} from "./Protocol";
-import { NetMessage, CLC_Move, NET_SetConvar } from "./NetMessage";
+} from "../shared/Protocol";
+import { NetMessage, CLC_Move, NET_SetConvar } from "../shared/NetMessage";
 
 export class NetChan {
     private game: string = "tf";

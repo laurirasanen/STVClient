@@ -1,8 +1,8 @@
-import { BinaryReader, SeekOrigin } from "../BinaryReader";
+import { BinaryReader, SeekOrigin } from "./BinaryReader";
 import { ConVar } from "./Structures";
-import { BinaryWriter } from "../BinaryWriter";
-import { MAX_EVENT_BITS } from "./GameEvents";
-import { errorWithTime } from "../Util";
+import { BinaryWriter } from "./BinaryWriter";
+import { MAX_EVENT_BITS } from "../STVClient/NetChan/MessageHandler/NetMessage/GameEvents";
+import { errorWithTime } from "./Util";
 import { net_Tick, NETMSG_TYPE_BITS, NUM_NEW_COMMAND_BITS, clc_Move, net_SetConVar } from "./Protocol";
 
 // https://github.com/VSES/SourceEngine2007/tree/master/src_main/common/netmessages.h

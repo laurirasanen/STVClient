@@ -1,4 +1,4 @@
-import { NetChan } from "./net/NetChan";
+import { NetChan } from "./STVClient/NetChan";
 
 export class STVClient {
     channel: NetChan;

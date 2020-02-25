@@ -1,4 +1,4 @@
-import { BinaryReader } from "../BinaryReader";
+import { BinaryReader } from "./BinaryReader";
 import { MAX_STREAMS, SUBCHANNEL_FREE, SUBCHANNEL_DIRTY } from "./Protocol";
 
 export class NetPacket {
