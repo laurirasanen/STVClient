@@ -1,0 +1,54 @@
+https://www.unknowncheats.me/forum/counterstrike-global-offensive/292668-networking-megathread.html
+https://gitlab.com/f1ssi0n/sniffles/-/blob/master/Sniffles
+ICE?
+
+client messages to server after connect:
+
+Msg from 192.168.1.99:27006: net_SetConVar: 40 cvars, "cl_interp_npcs"="0"
+Msg from 192.168.1.99:27006: net_SignonState: state 2, count -1
+Msg from 192.168.1.99:27006: clc_ClientInfo: SendTableCRC -2034172041
+Msg from 192.168.1.99:27006: net_SignonState: state 3, count 1
+Msg from 192.168.1.99:27006: net_SignonState: state 4, count 1
+Msg from 192.168.1.99:27006: clc_ListenEvents: registered events 189
+Msg from 192.168.1.99:27006: net_StringCmd: "menuclosed"
+Msg from 192.168.1.99:27006: net_StringCmd: "menuclosed"
+Msg from 192.168.1.99:27006: net_SignonState: state 5, count 1
+Msg from 192.168.1.99:27006: clc_ListenEvents: registered events 205
+Msg from 192.168.1.99:27006: net_StringCmd: "VModEnable 1"
+Msg from 192.168.1.99:27006: clc_BaselineAck: tick 2272
+Msg from 192.168.1.99:27006: net_SignonState: state 6, count 1
+Msg from 192.168.1.99:27006: clc_ListenEvents: registered events 217
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 35
+Msg from 192.168.1.99:27006: net_Tick: tick 2272
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 29
+Msg from 192.168.1.99:27006: net_Tick: tick 2272
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 25
+Msg from 192.168.1.99:27006: net_Tick: tick 2308
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 21
+Msg from 192.168.1.99:27006: net_Tick: tick 2308
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2308
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2312
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2312
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2312
+Msg from 192.168.1.99:27006: clc_Move: backup 2, new 2, bytes 19
+Msg from 192.168.1.99:27006: net_Tick: tick 2312
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2316
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2316
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2316
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2316
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2320
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2320
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2320
+Msg from 192.168.1.99:27006: clc_Move: backup 1, new 2, bytes 17
+Msg from 192.168.1.99:27006: net_Tick: tick 2320

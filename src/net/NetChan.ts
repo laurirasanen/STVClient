@@ -52,7 +52,7 @@ import {
     ENCODE_PAD_BITS,
     GetBitForBitNum
 } from "./Protocol";
-import { NetMessage, CLC_Move } from "./NetMessage";
+import { NetMessage, CLC_Move, NET_SetConvar } from "./NetMessage";
 
 export class NetChan {
     private game: string = "tf";
@@ -210,6 +210,12 @@ export class NetChan {
 
         message.writeToBuffer(writer);
 
+        // Deal with packets that are too small for some networks
+        while (writer.getSize() < MIN_ROUTABLE_PAYLOAD) {
+            // Go ahead and pad some bits as long as needed
+            writer.writeBitsUint(net_NOP, NETMSG_TYPE_BITS);
+        }
+
         // Make sure we have enough bits to read a final net_NOP opcode before compressing
         var remainingBits = writer.getOffset() % 8;
         if (remainingBits > 0 && remainingBits <= (8 - NETMSG_TYPE_BITS)) {
@@ -233,6 +239,7 @@ export class NetChan {
         writer.seek(flagPos, SeekOrigin.Begin);
         writer.writeUint8(flags);
 
+        // write checksum
         if (this.shouldChecksumPackets) {
             if (writer.getOffset() % 8) {
                 throw (`NetChan.sendNetMessage(): not aligned to byte for checksum`);
@@ -254,6 +261,8 @@ export class NetChan {
         var writer = new BinaryWriter();
         writer.writeUint32(CONNECTIONLESS_HEADER);
         writer.writeUint8(A2S_GETCHALLENGE);
+        // pad to 16 bytes
+        writer.writeString("000000000");
 
         this.send(writer.getBuffer());
     }
@@ -428,11 +437,14 @@ export class NetChan {
         // but looks like HLTV clients just use UDP snapshots.
 
         // TODO:
-        // client sends some sort of net msg immediately after connecting
-        var moveMsg = new CLC_Move();
-        moveMsg.backUpCommands = 0;
-        moveMsg.newCommands = 0;
-        this.sendNetMessage(moveMsg);
+        // client should send Net_SetConVar after connecting
+        // https://github.com/VSES/SourceEngine2007/blob/master/se2007/engine/hltvclient.cpp#L345
+
+        // https://github.com/VSES/SourceEngine2007/tree/master/src_main/engine/host.cpp#L1576
+        // shouldn't do anything if all cvars are default (send empty NET_SetConVar)
+
+        var setConVar = new NET_SetConvar();
+        this.sendNetMessage(setConVar);
     }
 
     processPacketHeader = (packet: NetPacket, reader: BinaryReader): number => {
