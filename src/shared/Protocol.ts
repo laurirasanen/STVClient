@@ -1,6 +1,6 @@
 export const CD_KEY = "HLTVHLTVHLTVHLTVHLTVHLTVHLTVHLTV";
 export const PROTOCOL_VERSION = 24;
-export const GAME_VERSION_TF = 5615298;
+export const GAME_VERSION_TF = 6064914;
 export const MAX_SUBCHANNELS = 8;
 export const MAX_STREAMS = 2;
 
