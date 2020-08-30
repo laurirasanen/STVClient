@@ -28,6 +28,7 @@ export const S2C_CHALLENGE = 'A'.charCodeAt(0);
 export const S2C_CONNECTION = 'B'.charCodeAt(0);
 export const S2C_REDIRECT = 'L'.charCodeAt(0);
 export const S2C_CONNREJECT = '9'.charCodeAt(0);
+export const S2C_MAGICVERSION = 0x5a4f4933 // Magic used in the S2C_CHALLENGE to detect version differences
 
 // Response to server info requests
 export const S2A_INFO_DETAILED = 'm'.charCodeAt(0);

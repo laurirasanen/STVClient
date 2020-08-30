@@ -2,7 +2,7 @@ import { Socket, createSocket } from "dgram";
 import * as lsjz from "lzjs";
 import * as CRC32 from "crc-32";
 import { MessageHandler } from "./NetChan/MessageHandler";
-import { logWithTime, errorWithTime, padNumber } from "../shared/Util";
+import { logWithTime, errorWithTime, padNumber, warnWithTime, randomInt } from "../shared/Util";
 import { BinaryWriter } from "../shared/BinaryWriter";
 import { BinaryReader, SeekOrigin } from "../shared/BinaryReader";
 import { NetPacket, DataFragment, SubChannel } from "../shared/Structures";
@@ -51,7 +51,8 @@ import {
     SUBCHANNEL_TOSEND,
     FLIPBIT,
     ENCODE_PAD_BITS,
-    GetBitForBitNum
+    GetBitForBitNum,
+    S2C_MAGICVERSION
 } from "../shared/Protocol";
 import { NetMessage, CLC_Move, NET_SetConvar } from "../shared/NetMessage";
 
@@ -66,7 +67,8 @@ export class NetChan {
     private clearTime: number;
     private messageHandler: MessageHandler;
     private timeOut: number;
-    private challengeNr: BigInt;
+    private challengeNr: number;
+    private retryChallenge: number;
     private nextCmdTime: number;
     private shouldChecksumPackets: boolean = true;
 
@@ -199,14 +201,19 @@ export class NetChan {
     }
 
     sendNetMessage(message: NetMessage) {
+        logWithTime(`STVClient.net.NetChan.sendChallengePacket():\n  ${message}`);
+
         var writer = new BinaryWriter();
         writer.writeUint32(this.outSequenceNr);
         writer.writeUint32(this.inSequenceNr);
+
         var flagPos = writer.getOffset();
         var flags = 0;
         writer.writeUint8(0);   // write correct flags later
+
         writer.writeUint16(0);  // write correct checksum later
         var checkSumStart = writer.getOffset();
+
         writer.writeUint8(this.inReliableState);
 
         if (this.chokedPackets > 0) {
@@ -217,10 +224,9 @@ export class NetChan {
 
         // always append a challenge number
         flags |= PACKET_FLAG_CHALLENGE;
-        writer.writeUint64(this.challengeNr);
+        writer.writeUint32(this.challengeNr);
 
         // send subchannel?
-
         message.writeToBuffer(writer);
 
         // Deal with packets that are too small for some networks
@@ -274,16 +280,19 @@ export class NetChan {
 
     sendChallengePacket() {
         logWithTime(`STVClient.net.NetChan.sendChallengePacket()`);
+
+        this.retryChallenge = (randomInt(0, 0x0FFF) << 16) | randomInt(0, 0xFFFF);
+
         var writer = new BinaryWriter();
         writer.writeUint32(CONNECTIONLESS_HEADER);
         writer.writeUint8(A2S_GETCHALLENGE);
-        // pad to 16 bytes
-        writer.writeString("000000000");
+        writer.writeUint32(this.retryChallenge);
+        writer.writeString("0000000000"); // pad out
 
         this.send(writer.getBuffer());
     }
 
-    sendConnectPacket(challengeNr: BigInt, authProtocol: number, keySize: number, encryptionKey: Array<number>, steamId: BigInt, secure: boolean, name: string, password: string) {
+    sendConnectPacket(challengeNr: number, authProtocol: number, keySize: number, encryptionKey: Array<number>, steamId: BigInt, secure: boolean, name: string, password: string) {
         logWithTime(`STVClient.net.NetChan.sendConnectPacket()`);
 
         var writer = new BinaryWriter();
@@ -292,7 +301,8 @@ export class NetChan {
         writer.writeUint8(C2S_CONNECT);
         writer.writeUint32(PROTOCOL_VERSION);
         writer.writeUint32(authProtocol);
-        writer.writeUint64(challengeNr);
+        writer.writeUint32(challengeNr);
+        writer.writeUint32(this.retryChallenge);
         writer.writeString(name);
         writer.writeString(password);
         if (this.game == "tf") {
@@ -355,23 +365,21 @@ export class NetChan {
         switch (packet.messageType) {
             case S2C_CHALLENGE:
                 logWithTime("STVClient.net.NetChan.handleConnectionlessPacket(): Received S2C_CHALLENGE");
-                packet.sequenceNr = reader.readUint32();
                 this.handleChallenge(reader);
                 break;
 
             case S2C_CONNECTION:
                 logWithTime("STVClient.net.NetChan.handleConnectionlessPacket(): Received S2C_CONNECTION");
-                packet.sequenceNr = reader.readUint32();
                 this.handleConnection(reader);
                 break;
 
             case S2C_CONNREJECT:
                 // Spoofed?
-                // This shouldn't be needed since we already check the ip and port
-                // in NetChan.onMessage but let's be sure.
                 if (this.state == SIGNONSTATE_CHALLENGE) {
-                    if (this.game !== "csgo") {
-                        packet.sequenceNr = reader.readUint32();
+                    var myChallenge = reader.readUint32();
+                    if (myChallenge != this.retryChallenge) {
+                        warnWithTime(`Received S2C_CONNREJECT with wrong challenge, ignoring. ${myChallenge} : ${this.retryChallenge}`);
+                        return;
                     }
                     var reason = reader.readString();
                     errorWithTime(`STVClient.net.NetChan.handleConnectionlessPacket(): Received S2C_CONNREJECT: ${reason}`);
@@ -390,15 +398,36 @@ export class NetChan {
 
         if (this.state !== SIGNONSTATE_CHALLENGE) return;
 
-        var challengeNr = BigInt(0);
+
+        var magicVersion = 0;
+        var challengeNr = 0;
+        var myChallenge = 0;
         var authProtocol = 0;
 
         if (this.game === "tf") {
-            challengeNr = reader.readUint64();
+            magicVersion = reader.readUint32();
+            challengeNr = reader.readUint32();
+            myChallenge = reader.readUint32();
             authProtocol = reader.readUint32();
         } else if (this.game === "csgo") {
-            authProtocol = reader.readUint32();
-            challengeNr = reader.readUint64();
+            throw ("not implemented");
+        }
+
+        console.log(
+            `   magicVersion: ${magicVersion}\n` +
+            `   challengeNr: ${challengeNr}\n` +
+            `   myChallenge: ${myChallenge}\n` +
+            `   authProtocol: ${authProtocol}`
+        );
+
+        if (magicVersion != S2C_MAGICVERSION) {
+            errorWithTime(`Incorrect magic version! ${magicVersion} : ${S2C_MAGICVERSION}`);
+            return;
+        }
+
+        if (myChallenge != this.retryChallenge) {
+            errorWithTime(`Server did not have the correct challenge number! ${myChallenge} : ${this.retryChallenge}`);
+            return;
         }
 
         var encryptionSize = 0;
@@ -442,6 +471,13 @@ export class NetChan {
         logWithTime(`STVClient.net.NetChan.handleConnection()`);
 
         if (this.state !== SIGNONSTATE_CHALLENGE) return;
+
+        var myChallenge = reader.readUint32();
+        if (myChallenge != this.retryChallenge) {
+            errorWithTime(`Server did not have the correct challenge number! ${myChallenge} : ${this.retryChallenge}`);
+            return;
+        }
+
         this.state = SIGNONSTATE_CONNECTED;
 
         this.inSequenceNr = 0;
@@ -502,7 +538,7 @@ export class NetChan {
         if (flags & PACKET_FLAG_CHALLENGE) {
             console.log("PACKET_FLAG_CHALLENGE");
             var challenge = reader.readUint32();
-            if (BigInt(challenge) != this.challengeNr) {
+            if (challenge != this.challengeNr) {
                 console.log("bad challenge " + challenge + " : " + this.challengeNr);
                 return -1;
             }

@@ -38,3 +38,13 @@ export function errorWithTime(text: string) {
 export function padNumber(value: number, multiple: number) {
     return value + (multiple - (value % multiple)) % multiple;
 }
+
+/**
+ * Generate random int with inclusive bounds
+ * @param {number} min - inclusive
+ * @param {number} max - inclusive
+ * @returns {number}
+ */
+export function randomInt(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}

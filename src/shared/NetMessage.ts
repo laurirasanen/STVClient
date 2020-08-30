@@ -128,7 +128,7 @@ export class NET_SetConvar extends NetMessage {
     }
 
     toString(): string {
-        return `${this.getName()}: ${this.conVars.length} cvars, "${this.conVars[0].name}"="${this.conVars[0].value}"`;
+        return `${this.getName()}: ${this.conVars.length} cvars`;
     }
 }
 
