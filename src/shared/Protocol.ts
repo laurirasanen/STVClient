@@ -122,6 +122,7 @@ export const PACKET_FLAG_COMPRESSED = (1 << 1);	// packet is compressed
 export const PACKET_FLAG_ENCRYPTED = (1 << 2); // packet is encrypted
 export const PACKET_FLAG_SPLIT = (1 << 3); // packet is split
 export const PACKET_FLAG_CHOKED = (1 << 4);  // packet was choked by sender
+export const PACKET_FLAG_CHALLENGE = (1 << 5);  // packet contains challenge number, use to prevent packet injection
 
 // NOTE:  Bits 5, 6, and 7 are used to specify the # of padding bits at the end of the packet!!!
 export const ENCODE_PAD_BITS = (x) => { return ((x << 5) & 0xff); }

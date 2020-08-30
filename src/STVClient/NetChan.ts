@@ -28,6 +28,7 @@ import {
     STEAM_KEYSIZE, S2C_CONNREJECT,
     S2C_CONNECTION,
     PACKET_FLAG_CHOKED,
+    PACKET_FLAG_CHALLENGE,
     PACKET_FLAG_RELIABLE,
     PACKET_FLAG_COMPRESSED,
     PACKET_FLAG_ENCRYPTED,
@@ -79,12 +80,15 @@ export class NetChan {
     state: number;
     password: string;
     name: string;
-    inSequenceNr: number = -1;
-    outSequenceNrAck: number = -1;
+    inSequenceNr: number = 0;
+    outSequenceNrAck: number = 0;
+    outSequenceNr: number = 1;
     droppedPackets: number = 0;
     lastReceived: number = 0;
     inReliableState: number = 0;
     outReliableState: number = 0;
+    streamContainsChallenge: boolean = false;
+    chokedPackets: number = 0;
 
     constructor(name: string, game: string) {
         logWithTime(`STVClient.Net.NetChan()`);
@@ -196,8 +200,8 @@ export class NetChan {
 
     sendNetMessage(message: NetMessage) {
         var writer = new BinaryWriter();
-        writer.writeUint32(this.outSequenceNrAck);
-        writer.writeUint32(this.inSequenceNr + 1);
+        writer.writeUint32(this.outSequenceNr);
+        writer.writeUint32(this.inSequenceNr);
         var flagPos = writer.getOffset();
         var flags = 0;
         writer.writeUint8(0);   // write correct flags later
@@ -205,7 +209,16 @@ export class NetChan {
         var checkSumStart = writer.getOffset();
         writer.writeUint8(this.inReliableState);
 
-        // choked packets?
+        if (this.chokedPackets > 0) {
+            // send number of choked packets
+            flags |= PACKET_FLAG_CHOKED;
+            writer.writeUint8(this.chokedPackets & 0xFF);
+        }
+
+        // always append a challenge number
+        flags |= PACKET_FLAG_CHALLENGE;
+        writer.writeUint64(this.challengeNr);
+
         // send subchannel?
 
         message.writeToBuffer(writer);
@@ -254,6 +267,9 @@ export class NetChan {
         }
 
         this.socket.send(writer.getBuffer());
+        this.chokedPackets = 0;
+        this.outSequenceNr++;
+        return this.outSequenceNr - 1;
     }
 
     sendChallengePacket() {
@@ -429,6 +445,7 @@ export class NetChan {
         this.state = SIGNONSTATE_CONNECTED;
 
         this.inSequenceNr = 0;
+        this.outSequenceNr = 1;
         this.outSequenceNrAck = 0;
         this.lastReceived = 0;
         this.inReliableState = 0;
@@ -480,6 +497,20 @@ export class NetChan {
         if (flags & PACKET_FLAG_CHOKED) {
             console.log("PACKET_FLAG_CHOKED");
             choked = reader.readUint8();
+        }
+
+        if (flags & PACKET_FLAG_CHALLENGE) {
+            console.log("PACKET_FLAG_CHALLENGE");
+            var challenge = reader.readUint32();
+            if (BigInt(challenge) != this.challengeNr) {
+                console.log("bad challenge " + challenge + " : " + this.challengeNr);
+                return -1;
+            }
+            // challenge was good
+            this.streamContainsChallenge = true;
+        } else if (this.streamContainsChallenge) {
+            // no challenge in this packet but got them before?
+            return -1;
         }
 
         // discard stale or duplicate packets
